@@ -72,12 +72,12 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.victory.mediroom.navigation.ROUT_ABOUT
 import com.victory.mediroom.navigation.ROUT_APPOINTMENT
-import com.victory.mediroom.navigation.ROUT_GALLERY
 import com.victory.mediroom.navigation.ROUT_HOME
 import com.victory.mediroom.navigation.ROUT_LOGIN
 import com.victory.mediroom.navigation.ROUT_PROFILE
 import com.victory.mediroom.navigation.ROUT_REVIEW
 import com.victory.mediroom.navigation.ROUT_SERVICE
+import com.victory.mediroom.navigation.ROUT_VIEWGALLERY
 import com.victory.mediroom.ui.theme.lightpurple
 import com.victory.mediroom.ui.theme.lightpurple2
 import com.victory.mediroom.ui.theme.purple
@@ -134,14 +134,7 @@ fun HomeScreen(navController: NavController) {
                 }
             }
         },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {  },
-                containerColor = purple
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Gallery")
-            }
-        },
+
         containerColor = lightpurple
     ) { padding ->
         Column(
@@ -185,26 +178,25 @@ fun HomeScreen(navController: NavController) {
             }
 
             // Info Cards Row
-
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 DashboardCardWithCarousel(
                     title = "About Us",
                     icon = Icons.Default.AccountCircle,
-                    images = listOf(R.drawable.neuro1, R.drawable.neuro2, R.drawable.neuro3)
+                    images = listOf(R.drawable.img_2, R.drawable.img_3, R.drawable.img_4)
                 ) {
                     navController.navigate(ROUT_ABOUT)
                 }
-
+            }
 
 
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 DashboardCardWithCarousel(
                     title = "Gallery",
                     icon = Icons.Default.Face,
-                    images = listOf(R.drawable.neuro1, R.drawable.neuro2, R.drawable.neuro3)
+                    images = listOf(R.drawable.img_5, R.drawable.img_6, R.drawable.img_7)
                 ) {
-                    navController.navigate(ROUT_GALLERY)
+                    navController.navigate(ROUT_VIEWGALLERY)
                 }
-                // Repeat for other cards as desired...
             }
 
 
@@ -212,22 +204,20 @@ fun HomeScreen(navController: NavController) {
                 DashboardCardWithCarousel(
                     title = "Services",
                     icon = Icons.Default.Build,
-                    images = listOf(R.drawable.neuro1, R.drawable.neuro2, R.drawable.neuro3)
+                    images = listOf(R.drawable.img_8, R.drawable.img_9, R.drawable.img_10)
                 ) {
                     navController.navigate(ROUT_SERVICE)
                 }
-                // Repeat for other cards as desired...
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 DashboardCardWithCarousel(
                     title = "Appointments",
                     icon = Icons.Default.CheckCircle,
-                    images = listOf(R.drawable.neuro1, R.drawable.neuro2, R.drawable.neuro3)
+                    images = listOf(R.drawable.img_11, R.drawable.img_12, R.drawable.img_13)
                 ) {
-                    navController.navigate(ROUT_GALLERY)
+                    navController.navigate(ROUT_APPOINTMENT)
                 }
-                // Repeat for other cards as desired...
             }
 
 
@@ -236,7 +226,7 @@ fun HomeScreen(navController: NavController) {
                 text = "Serving with a Heart of Gold",
                 fontSize = 18.sp,
                 fontStyle = FontStyle.Italic,
-                color = Color.White,
+                color = Color.DarkGray,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -291,7 +281,7 @@ fun DashboardCardWithCarousel(
                 textAlign = TextAlign.Center,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
-                fontSize = 30.sp,
+                fontSize = 35.sp,
                 modifier = Modifier.padding(bottom = 30.dp)
             )
 

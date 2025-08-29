@@ -31,9 +31,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.victory.mediroom.R
-import com.victory.mediroom.navigation.ROUT_GALLERY
 import com.victory.mediroom.navigation.ROUT_HOME
 import com.victory.mediroom.navigation.ROUT_REGISTER
+import com.victory.mediroom.navigation.ROUT_VIEWREVIEW
 import com.victory.mediroom.ui.theme.lightpurple
 import com.victory.mediroom.ui.theme.lightpurple2
 import com.victory.mediroom.ui.theme.purple
@@ -58,7 +58,7 @@ fun LoginScreen(
                 Toast.makeText(context, "Invalid Credentials", Toast.LENGTH_SHORT).show()
             } else {
                 if (user.role=="Admin"){
-                    navController.navigate(ROUT_GALLERY)
+                    navController.navigate(ROUT_VIEWREVIEW)
                 }
                 else if (user.role == "Doctor"){
                     navController.navigate(ROUT_HOME)

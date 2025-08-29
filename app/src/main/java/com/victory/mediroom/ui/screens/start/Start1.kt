@@ -44,7 +44,7 @@ fun Start1Screen(navController: NavController) {
         modifier = Modifier
             .fillMaxSize()
             .background(
-                brush = Brush.linearGradient(
+                brush = Brush.radialGradient(
                     colors = listOf(Color(0xFFFFFCFF), Color(0xFFDAB1DA))
                 ),
                 shape = RoundedCornerShape(12.dp)

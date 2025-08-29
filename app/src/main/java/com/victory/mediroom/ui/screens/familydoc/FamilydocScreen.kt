@@ -54,8 +54,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.victory.mediroom.navigation.ROUT_APPOINTMENT
-import com.victory.mediroom.navigation.ROUT_GALLERY
 import com.victory.mediroom.navigation.ROUT_HOME
+import com.victory.mediroom.navigation.ROUT_GALLERY
 import com.victory.mediroom.navigation.ROUT_PROFILE
 import com.victory.mediroom.navigation.ROUT_REVIEW
 import com.victory.mediroom.ui.theme.lightpurple

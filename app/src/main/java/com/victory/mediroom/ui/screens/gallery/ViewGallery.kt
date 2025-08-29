@@ -1,4 +1,6 @@
-package com.victory.mediroom.ui.screens.review
+@file:OptIn(ExperimentalMaterial3Api::class)
+
+package com.victory.mediroom.ui.screens.gallery
 
 import android.app.Application
 import androidx.compose.foundation.background
@@ -10,47 +12,62 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import androidx.room.*
+import coil.compose.AsyncImage
 import com.victory.mediroom.navigation.*
+import com.victory.mediroom.ui.theme.lightpurple
 import com.victory.mediroom.ui.theme.lightpurple2
 import com.victory.mediroom.ui.theme.purple
-import com.victory.mediroom.ui.theme.purple1
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 
 
-// ---------------- UI: View Review Screen ----------------------
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ViewReviewScreen(navController: NavController) {
+fun ViewGalleryScreen(navController: NavController) {
     val context = LocalContext.current
-    val reviewViewModel: ReviewViewModel = viewModel(
-        factory = object : ViewModelProvider.AndroidViewModelFactory(
-            context.applicationContext as Application
-        ) {}
-    )
+    val isInPreview = LocalInspectionMode.current
 
-    val reviewList by reviewViewModel.allReviews.observeAsState(initial = emptyList())
-    var selectedIndex by remember { mutableStateOf(1) }
+    // Safe ViewModel initialization
+    val viewModel: GalleryViewModel? = (if (!isInPreview) {
+        val appContext = context.applicationContext
+        if (appContext is Application) {
+
+            class GalleryViewModelFactory(
+                private val application: Application
+            ) : ViewModelProvider.Factory {
+
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return when {
+                        modelClass.isAssignableFrom(GalleryViewModel::class.java) ->
+                            GalleryViewModel(application) as T
+                        else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+                    }
+                }
+            }
+
+        } else null
+    } else null) as GalleryViewModel?
+
+    // Collect state only when ViewModel is available
+    val savedItems by viewModel?.galleryItems?.collectAsState() ?: remember { mutableStateOf(emptyList()) }
+
+    var selectedIndex by remember { mutableStateOf(0) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("MediRoom Reviews", fontWeight = FontWeight.Bold) },
+                title = { Text("MEDIROOM") },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigate(ROUT_HOME) }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -62,14 +79,15 @@ fun ViewReviewScreen(navController: NavController) {
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = purple,
-                    titleContentColor = purple
+                    containerColor = lightpurple2,
+                    titleContentColor = purple,
+                    navigationIconContentColor = purple
                 )
             )
         },
 
         bottomBar = {
-            NavigationBar(containerColor = purple1) {
+            NavigationBar(containerColor = lightpurple2) {
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
                     label = { Text("Home") },
@@ -89,8 +107,8 @@ fun ViewReviewScreen(navController: NavController) {
                     }
                 )
                 NavigationBarItem(
-                    icon = { Icon(Icons.Default.CheckCircle, contentDescription = "Appointment") },
-                    label = { Text("View Appointment") },
+                    icon = { Icon(Icons.Default.CheckCircle, contentDescription = "Appointments") },
+                    label = { Text("Appointment") },
                     selected = selectedIndex == 2,
                     onClick = {
                         selectedIndex = 2
@@ -99,11 +117,11 @@ fun ViewReviewScreen(navController: NavController) {
                 )
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
-                    label = { Text("Gallery") },
+                    label = { Text("Profile") },
                     selected = selectedIndex == 3,
                     onClick = {
                         selectedIndex = 3
-                        navController.navigate(ROUT_GALLERY)
+                        navController.navigate(ROUT_PROFILE)
                     }
                 )
             }
@@ -122,49 +140,34 @@ fun ViewReviewScreen(navController: NavController) {
             Column(
                 modifier = Modifier
                     .padding(paddingValues)
-                    .background(lightpurple2)
                     .fillMaxSize()
+                    .background(lightpurple)
                     .verticalScroll(rememberScrollState())
                     .padding(16.dp)
             ) {
-                Text(
-                    text = "Patient Reviews",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = purple,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-
-                if (reviewList.isEmpty()) {
-                    Text(
-                        text = "No reviews yet. Be the first to leave feedback!",
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.padding(top = 32.dp),
-                        color = Color.Gray
-                    )
-                }
-
-                reviewList.forEach { review ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(6.dp),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                text = "Review #${review.id}",
-                                fontWeight = FontWeight.Bold,
-                                color = purple,
-                                fontSize = 14.sp
+                if (savedItems.isEmpty()) {
+                    Text("No items in gallery.", color = Color.DarkGray)
+                } else {
+                    savedItems.forEach { item ->
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color.White, RoundedCornerShape(8.dp))
+                                .padding(12.dp)
+                        ) {
+                            AsyncImage(
+                                model = item.imageUri,
+                                contentDescription = "Gallery Image",
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(180.dp)
+                                    .clip(RoundedCornerShape(8.dp)),
+                                contentScale = ContentScale.Crop
                             )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = review.content,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(item.description, color = Color.DarkGray)
                         }
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
             }
@@ -172,4 +175,8 @@ fun ViewReviewScreen(navController: NavController) {
     )
 }
 
-
+@Preview(showBackground = true)
+@Composable
+fun ViewGalleryScreenPreview() {
+    ViewGalleryScreen(navController = rememberNavController())
+}

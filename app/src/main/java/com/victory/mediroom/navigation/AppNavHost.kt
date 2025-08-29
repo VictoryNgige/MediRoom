@@ -1,5 +1,6 @@
 package com.victory.mediroom.navigation
 
+
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -11,6 +12,7 @@ import com.victory.mediroom.data.UserDatabase
 import com.victory.mediroom.repository.UserRepository
 import com.victory.mediroom.ui.screens.about.AboutScreen
 import com.victory.mediroom.ui.screens.appointment.AppointmentScreen
+import com.victory.mediroom.ui.screens.appointment.ViewAppointmentScreen
 import com.victory.mediroom.ui.screens.auth.LoginScreen
 import com.victory.mediroom.ui.screens.auth.RegisterScreen
 import com.victory.mediroom.ui.screens.cardiologist.CardiologistScreen
@@ -26,6 +28,7 @@ import com.victory.mediroom.ui.screens.pediatrician.PediatricianScreen
 import com.victory.mediroom.ui.screens.profile.ProfileScreen
 import com.victory.mediroom.ui.screens.radiologist.RadiologistScreen
 import com.victory.mediroom.ui.screens.review.ReviewScreen
+import com.victory.mediroom.ui.screens.review.ViewReviewScreen
 import com.victory.mediroom.ui.screens.service.ServiceScreen
 import com.victory.mediroom.ui.screens.splash.SplashScreen
 import com.victory.mediroom.ui.screens.start.Start1Screen
@@ -77,14 +80,22 @@ fun AppNavHost(
         composable(ROUT_REVIEW) {
             ReviewScreen(navController)
         }
+        composable(ROUT_VIEWREVIEW) {
+            ViewReviewScreen(navController)
+        }
 
         composable(ROUT_APPOINTMENT) {
             AppointmentScreen(navController)
         }
 
+        composable(ROUT_VIEWAPPOINTMENT) {
+            ViewAppointmentScreen(navController)
+        }
+
         composable(ROUT_GALLERY) {
             GalleryScreen(navController)
         }
+
         composable(ROUT_VIEWGALLERY) {
             ViewGalleryScreen(navController)
         }

@@ -1,197 +1,153 @@
 package com.victory.mediroom.ui.screens.gallery
 
+import android.app.Application
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import androidx.room.*
+import coil.compose.AsyncImage
 import com.victory.mediroom.R
-import com.victory.mediroom.ui.theme.lightpurple
-import com.victory.mediroom.ui.theme.purple
+import com.victory.mediroom.navigation.ROUT_HOME
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-// --- ROOM ENTITY ---
-@Entity(tableName = "gallery_item")
+// Entity
+@Entity(tableName = "gallery_items")
 data class GalleryItem(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val title: String,
-    val description: String,
-    val imageUri: String
+    val imageUri: String,
+    val description: String
 )
 
-// --- DAO ---
+// DAO
 @Dao
 interface GalleryDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert
     suspend fun insert(item: GalleryItem)
 
-    @Query("SELECT * FROM gallery_item ORDER BY id DESC")
-    fun getAllItems(): Flow<List<GalleryItem>>
+    @Query("SELECT * FROM gallery_items ORDER BY id DESC")
+    fun getAll(): Flow<List<GalleryItem>>
 }
 
-// --- DATABASE ---
-@Database(entities = [GalleryItem::class], version = 1, exportSchema = false)
+// Room DB
+@Database(entities = [GalleryItem::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun galleryDao(): GalleryDao
 
     companion object {
         @Volatile private var INSTANCE: AppDatabase? = null
 
-        fun getDatabase(context: Context): AppDatabase =
-            INSTANCE ?: synchronized(this) {
-                Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, "gallery_db")
-                    .fallbackToDestructiveMigration()
-                    .build().also { INSTANCE = it }
+        fun getDatabase(context: Context): AppDatabase {
+            return INSTANCE ?: synchronized(this) {
+                val instance = Room.databaseBuilder(
+                    context.applicationContext,
+                    AppDatabase::class.java,
+                    "gallery_db"
+                ).fallbackToDestructiveMigration().build()
+                INSTANCE = instance
+                instance
             }
+        }
     }
 }
 
-// --- VIEWMODEL ---
-class GalleryViewModel(private val dao: GalleryDao) : ViewModel() {
+// ViewModel
+class GalleryViewModel(app: Application) : AndroidViewModel(app) {
+    private val dao = AppDatabase.getDatabase(app).galleryDao()
 
-    private val _items = MutableStateFlow<List<GalleryItem>>(emptyList())
-    val items: StateFlow<List<GalleryItem>> = _items.asStateFlow()
+    val galleryItems: StateFlow<List<GalleryItem>> = dao.getAll()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    init {
+    fun addGalleryItem(uri: String, description: String) {
         viewModelScope.launch {
-            dao.getAllItems().collect {
-                _items.value = it
-            }
-        }
-    }
-
-    fun addItem(title: String, description: String, imageUri: String) {
-        viewModelScope.launch {
-            dao.insert(GalleryItem(title = title, description = description, imageUri = imageUri))
-        }
-    }
-
-    class Factory(private val dao: GalleryDao) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            if (modelClass.isAssignableFrom(GalleryViewModel::class.java)) {
-                @Suppress("UNCHECKED_CAST")
-                return GalleryViewModel(dao) as T
-            }
-            throw IllegalArgumentException("Unknown ViewModel class")
+            dao.insert(GalleryItem(imageUri = uri, description = description))
         }
     }
 }
 
-// Helper function to decode bitmap safely
-private fun decodeBitmapFromUri(context: Context, uri: Uri): Bitmap? {
-    return try {
-        context.contentResolver.openInputStream(uri)?.use { stream ->
-            BitmapFactory.decodeStream(stream)
-        }
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
+// ViewModel Factory
+class GalleryViewModelFactory(private val app: Application) :
+    ViewModelProvider.AndroidViewModelFactory(app) {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        return GalleryViewModel(app) as T
     }
 }
 
-// --- MAIN COMPOSABLE ---
+// Composable Screen
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GalleryScreen(navController: NavController) {
     val context = LocalContext.current
-    val db = remember { AppDatabase.getDatabase(context) }
-    val viewModel: GalleryViewModel = viewModel(factory = GalleryViewModel.Factory(db.galleryDao()))
-    val galleryItems by viewModel.items.collectAsState()
+    val isPreview = LocalInspectionMode.current
 
-    var title by remember { mutableStateOf(TextFieldValue("")) }
-    var description by remember { mutableStateOf(TextFieldValue("")) }
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    // ViewModel - safe during preview
+    val viewModel: GalleryViewModel? = if (!isPreview) {
+        val app = context.applicationContext as? Application
+        requireNotNull(app) { "Application context is null or invalid." }
 
-    val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        selectedImageUri = uri
+        viewModel(factory = GalleryViewModelFactory(app))
+    } else null
+
+    // Safe collection of gallery items
+    val savedItems by viewModel?.galleryItems?.collectAsState() ?: remember { mutableStateOf(emptyList()) }
+
+    // State for new image entries
+    val imageEntryList = remember { mutableStateMapOf<Uri, String>() }
+
+    // Image picker launcher
+    val pickImageLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        uri?.let {
+            imageEntryList[it] = ""
+        }
     }
-
-    var selectedIndex by remember { mutableStateOf(0) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Gallery Admin") },
+                title = { Text("MEDIROOM") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
+                    IconButton(onClick = { navController.navigate(ROUT_HOME) }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* TODO: Add sharing or other actions */ }) {
-                        Icon(Icons.Default.Share, contentDescription = "Share")
-                    }
-                    IconButton(onClick = { /* TODO: Notifications */ }) {
+                    IconButton(onClick = {}) {
                         Icon(Icons.Default.Notifications, contentDescription = "Notifications")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = purple,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White,
-                    actionIconContentColor = Color.White
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
             )
         },
-        bottomBar = {
-            NavigationBar(containerColor = purple) {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
-                    label = { Text("Home") },
-                    selected = selectedIndex == 0,
-                    onClick = { selectedIndex = 0; navController.navigate("home_route") }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Create, contentDescription = "Reviews") },
-                    label = { Text("Reviews") },
-                    selected = selectedIndex == 1,
-                    onClick = { selectedIndex = 1; navController.navigate("reviews_route") }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.CheckCircle, contentDescription = "Appointment") },
-                    label = { Text("Appointment") },
-                    selected = selectedIndex == 2,
-                    onClick = { selectedIndex = 2; navController.navigate("appointment_route") }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
-                    label = { Text("Profile") },
-                    selected = selectedIndex == 3,
-                    onClick = { selectedIndex = 3; navController.navigate("profile_route") }
-                )
-            }
-        },
         floatingActionButton = {
-            FloatingActionButton(onClick = { navController.navigate("gallery_route") }, containerColor = purple) {
+            FloatingActionButton(onClick = { }) {
                 Icon(Icons.Default.Face, contentDescription = "Gallery")
             }
         },
@@ -200,134 +156,95 @@ fun GalleryScreen(navController: NavController) {
                 modifier = Modifier
                     .padding(padding)
                     .fillMaxSize()
-                    .background(lightpurple)
                     .verticalScroll(rememberScrollState())
                     .padding(16.dp)
             ) {
-
-                Text("Add New Gallery Item", style = MaterialTheme.typography.headlineSmall)
-
+                // Gallery List
+                Text("Saved Gallery", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(12.dp))
 
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Title") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Description") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Button(
-                    onClick = { imagePickerLauncher.launch("image/*") },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Select Image")
+                if (savedItems.isEmpty()) {
+                    Text("No items in gallery.", color = Color.Gray)
+                } else {
+                    savedItems.forEach { item ->
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color.White, RoundedCornerShape(8.dp))
+                                .padding(12.dp)
+                        ) {
+                            AsyncImage(
+                                model = item.imageUri,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(180.dp)
+                                    .clip(RoundedCornerShape(8.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(item.description)
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+                Text("Add New Image", style = MaterialTheme.typography.titleMedium)
 
-                selectedImageUri?.let { uri ->
-                    val bitmap by remember(uri) {
-                        mutableStateOf(decodeBitmapFromUri(context, uri))
-                    }
-                    bitmap?.let { bmp ->
-                        Image(
-                            bitmap = bmp.asImageBitmap(),
+                Button(onClick = {
+                    pickImageLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+
+                }) {
+                    Icon(painter = painterResource(id = R.drawable.addaphoto), contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Pick an Image")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                imageEntryList.forEach { (uri, desc) ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.White, RoundedCornerShape(8.dp))
+                            .padding(12.dp)
+                    ) {
+                        AsyncImage(
+                            model = uri,
                             contentDescription = "Selected Image",
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(200.dp)
-                                .clickable {
-                                    imagePickerLauncher.launch("image/*")
-                                }
+                                .height(180.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
                         )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = {
-                        if (title.text.isNotBlank() && description.text.isNotBlank() && selectedImageUri != null) {
-                            viewModel.addItem(title.text, description.text, selectedImageUri.toString())
-                            title = TextFieldValue("")
-                            description = TextFieldValue("")
-                            selectedImageUri = null
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = title.text.isNotBlank() && description.text.isNotBlank() && selectedImageUri != null
-                ) {
-                    Text("Upload")
-                }
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                Divider()
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text("Uploaded Gallery Items", style = MaterialTheme.typography.titleMedium)
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                if (galleryItems.isEmpty()) {
-                    Text("No items uploaded yet.", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-                } else {
-                    LazyColumn {
-                        items(galleryItems) { item ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 8.dp),
-                                elevation = CardDefaults.cardElevation(6.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .padding(8.dp)
-                                ) {
-                                    val imageUri = remember(item.imageUri) { Uri.parse(item.imageUri) }
-                                    val bitmap = remember(imageUri) { decodeBitmapFromUri(context, imageUri) }
-
-                                    if (bitmap != null) {
-                                        Image(
-                                            bitmap = bitmap.asImageBitmap(),
-                                            contentDescription = item.title,
-                                            modifier = Modifier.size(80.dp)
-                                        )
-                                    } else {
-                                        // Fallback placeholder image in case of error
-                                        Image(
-                                            painter = painterResource(id = R.drawable.img),
-                                            contentDescription = "Placeholder",
-                                            modifier = Modifier.size(80.dp)
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.width(12.dp))
-
-                                    Column {
-                                        Text(item.title, style = MaterialTheme.typography.titleMedium)
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(item.description, style = MaterialTheme.typography.bodyMedium)
-                                    }
-                                }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        BasicTextField(
+                            value = desc,
+                            onValueChange = { imageEntryList[uri] = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color.LightGray, RoundedCornerShape(4.dp))
+                                .padding(8.dp),
+                            decorationBox = { inner ->
+                                if (desc.isEmpty()) Text("Add description...", color = Color.Gray)
+                                inner()
                             }
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = {
+                                viewModel?.addGalleryItem(uri.toString(), desc)
+                                imageEntryList.remove(uri)
+                            },
+                            modifier = Modifier.align(Alignment.End)
+                        ) {
+                            Text("Save to Gallery")
                         }
+
                     }
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
         }

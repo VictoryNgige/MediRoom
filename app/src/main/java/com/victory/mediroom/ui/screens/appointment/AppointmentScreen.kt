@@ -37,6 +37,7 @@ import com.victory.mediroom.R
 import com.victory.mediroom.navigation.*
 import com.victory.mediroom.ui.theme.lightpurple
 import com.victory.mediroom.ui.theme.purple
+import com.victory.mediroom.ui.theme.purple1
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.*
 
@@ -109,16 +110,74 @@ fun AppointmentScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Book Appointment", fontWeight = FontWeight.Bold) },
+                title = { Text("MediRoom", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton (
-                        onClick = { navController.navigate(ROUT_HOME) }
-                    )
-                    { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = { navController.navigate(ROUT_HOME) }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = purple, titleContentColor = Color.White)
+                actions = {
+                    IconButton(onClick = {}) {
+                        Icon(Icons.Default.Notifications, contentDescription = "Notifications")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = purple1,
+                    titleContentColor = purple,
+                    navigationIconContentColor = purple
+                )
             )
         },
+
+        //BottomBar
+        bottomBar = {
+            NavigationBar(
+                containerColor = purple1
+            ){
+                var selectedIndex: Int? = null
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+                    label = { Text("Home") },
+                    selected = selectedIndex == 0,
+                    onClick = { selectedIndex = 0
+                        navController.navigate(ROUT_HOME)
+                    }
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Create, contentDescription = "Favorites") },
+                    label = { Text("Reveiws") },
+                    selected = selectedIndex == 1,
+                    onClick = { selectedIndex = 1
+                        navController.navigate(ROUT_REVIEW)
+                    }
+                )
+
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.CheckCircle, contentDescription = "Appointment") },
+                    label = { Text("Appointment") },
+                    selected = selectedIndex == 2,
+                    onClick = {
+                        selectedIndex = 2
+                        navController.navigate(ROUT_APPOINTMENT)
+                    }
+                )
+
+
+                NavigationBarItem(
+                    icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
+                    label = { Text("Profile") },
+                    selected = selectedIndex == 2,
+                    onClick = { selectedIndex = 2
+                        navController.navigate(ROUT_PROFILE)
+                    }
+                )
+
+
+            }
+        },
+
+
+
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 icon = { Icon(Icons.Default.Add, contentDescription = "Form") },

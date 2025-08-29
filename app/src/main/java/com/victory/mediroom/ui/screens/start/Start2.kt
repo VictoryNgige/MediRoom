@@ -1,5 +1,7 @@
 package com.victory.mediroom.ui.screens.start
 
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
@@ -44,6 +47,9 @@ import com.victory.mediroom.ui.theme.purple
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Start2Screen(navController: NavController) {
+
+
+
 
 }
 @Preview(showBackground = true)

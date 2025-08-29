@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -64,6 +65,7 @@ import com.victory.mediroom.navigation.ROUT_PROFILE
 import com.victory.mediroom.navigation.ROUT_REVIEW
 import com.victory.mediroom.ui.theme.lightpurple2
 import com.victory.mediroom.ui.theme.purple
+import com.victory.mediroom.ui.theme.purple1
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -237,26 +239,28 @@ fun ProfileScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Edit Profile", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = lightpurple2,
-                    titleContentColor = purple
-                ),
+                title = { Text("Create Profile", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = purple
-                        )
+                    IconButton(onClick = { navController.navigate(ROUT_HOME) }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                actions = {
+                    IconButton(onClick = {}) {
+                        Icon(Icons.Default.Notifications, contentDescription = "Notifications")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = purple1,
+                    titleContentColor = purple,
+                    navigationIconContentColor = purple
+                )
             )
         },
 
         // Bottom Navigation Bar
         bottomBar = {
-            NavigationBar(containerColor = lightpurple2) {
+            NavigationBar(containerColor = purple1) {
                 var selectedIndex: Int? = null
                 NavigationBarItem(
                     icon = { Icon(Icons.Default.Home, contentDescription = "Home") },

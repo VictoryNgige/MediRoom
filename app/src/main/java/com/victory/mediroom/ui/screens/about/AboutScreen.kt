@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -57,11 +58,13 @@ import com.victory.mediroom.R
 import com.victory.mediroom.navigation.ROUT_APPOINTMENT
 import com.victory.mediroom.navigation.ROUT_GALLERY
 import com.victory.mediroom.navigation.ROUT_HOME
+import com.victory.mediroom.navigation.ROUT_GALLERY
 import com.victory.mediroom.navigation.ROUT_PROFILE
 import com.victory.mediroom.navigation.ROUT_REVIEW
 import com.victory.mediroom.ui.theme.lightpurple
 import com.victory.mediroom.ui.theme.lightpurple2
 import com.victory.mediroom.ui.theme.purple
+import com.victory.mediroom.ui.theme.purple1
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,46 +76,34 @@ fun AboutScreen(navController: NavController){
 
         Scaffold(
             //TopBar
+
             topBar = {
                 TopAppBar(
-                    title = { Text("MEDIROOM") },
+                    title = { Text("MediRoom", fontWeight = FontWeight.Bold) },
                     navigationIcon = {
-                        IconButton(onClick = {
-                            navController.navigate(ROUT_HOME)
-                        }) {
+                        IconButton(onClick = { navController.navigate(ROUT_HOME) }) {
                             Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                         }
                     },
-
                     actions = {
                         IconButton(onClick = {}) {
-                            Icon(
-                                imageVector = Icons.Default.Share,
-                                contentDescription = "Share"
-                            )
-
-                        }
-                        IconButton(onClick = {}) {
-                            Icon(
-                                imageVector = Icons.Default.Notifications,
-                                contentDescription = "Notifications"
-                            )
-
+                            Icon(Icons.Default.Notifications, contentDescription = "Notifications")
                         }
                     },
-
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = lightpurple2,
+                        containerColor = purple1,
                         titleContentColor = purple,
                         navigationIconContentColor = purple
                     )
                 )
             },
 
+
+
             //BottomBar
             bottomBar = {
                 NavigationBar(
-                    containerColor = lightpurple2
+                    containerColor = purple1
                 ){
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
@@ -131,15 +122,16 @@ fun AboutScreen(navController: NavController){
                         }
                     )
 
-
                     NavigationBarItem(
-                        icon = { Icon(Icons.Default.CheckCircle, contentDescription = "Products") },
+                        icon = { Icon(Icons.Default.CheckCircle, contentDescription = "Appointment") },
                         label = { Text("Appointment") },
-                        selected = selectedIndex == 3,
-                        onClick = { selectedIndex = 3
+                        selected = selectedIndex == 2,
+                        onClick = {
+                            selectedIndex = 2
                             navController.navigate(ROUT_APPOINTMENT)
                         }
                     )
+
 
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.Person, contentDescription = "Profile") },
@@ -172,44 +164,138 @@ fun AboutScreen(navController: NavController){
                     modifier = Modifier
                         .padding(paddingValues)
                         .fillMaxSize()
-                        .background(color = lightpurple)
+                        .background(color = lightpurple2)
                         .verticalScroll(rememberScrollState())
                 ) {
 
 
                     //Main Contents of the page
 
+                    // Hospital Image Banner
                     Image(
-                        painter = painterResource(R.drawable.hospital_logo),  // Hospital logo
-                        contentDescription = "Hospital Logo",
-                        modifier = Modifier
-                            .size(180.dp)
-                    )
-
-                    // Hero Banner
-                    Card(
+                        painter = painterResource(id = R.drawable.hospital_logo), // Replace with actual image
+                        contentDescription = "Hospital Banner",
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(170.dp),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.15f))
+                            .height(200.dp)
+                            .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+// Welcome Text
+                    Text(
+                        text = "Welcome to MediRoom Hospital",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = purple,
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                    )
+
+// Subheading
+                    Text(
+                        text = "Your health, our priority",
+                        fontSize = 16.sp,
+                        color = Color.DarkGray,
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+// Description Card
+                    Card(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = lightpurple)
                     ) {
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            Image(
-                                painter = painterResource(R.drawable.img),
-                                contentDescription = "Mediroom Banner",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.matchParentSize().clip(RoundedCornerShape(20.dp))
-                            )
+                        Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = "Get Quality Medical Care\nwith Mediroom",
-                                color = Color.White,
-                                fontSize = 24.sp,
+                                text = "About Us",
+                                fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(16.dp)
+                                color = purple
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "MediRoom is a modern, patient-centric hospital dedicated to delivering exceptional healthcare. With state-of-the-art facilities, a team of expert doctors, and easy-to-use digital services, we ensure a seamless medical experience — from booking appointments to accessing care.",
+                                fontSize = 14.sp,
+                                color = Color.Black
                             )
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+// Key Features
+                    Card(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "What You Can Do",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = purple
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("• Book appointments easily from anywhere.")
+                            Text("• Explore doctor profiles and specialties.")
+                            Text("• View hospital services and departments.")
+                            Text("• Get notified about health tips & updates.")
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+// Principles Section
+                    Card(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp)
+                            .fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = lightpurple)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Our Core Principles",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = purple
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("✅ Compassion: We treat every patient with kindness and dignity.")
+                            Text("✅ Excellence: We aim for the highest standards in medical care.")
+                            Text("✅ Innovation: We embrace technology to enhance patient experience.")
+                            Text("✅ Integrity: We value honesty, ethics, and transparency.")
+                            Text("✅ Collaboration: We work together for the best outcomes.")
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+// Footer
+                    Text(
+                        text = "Thank you for choosing MediRoom.",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.DarkGray,
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .padding(bottom = 32.dp)
+                    )
+
+
+
+
 
 
 
